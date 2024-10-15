@@ -14,15 +14,16 @@ class _SignupScreenState extends State<SignupScreen> {
   final TextEditingController mobileController = TextEditingController();
   final TextEditingController birthDateController = TextEditingController();
   final ImagePicker _picker = ImagePicker();
+  bool _isLoading = false; // Track loading state
 
-  XFile? _image; // For the profile picture
-  XFile? _nationalIdImage; // For the national ID scan
-  String extractedText = ''; // To store extracted text
+  XFile? _image;
+  XFile? _nationalIdImage;
+  String extractedText = '';
   final TextRecognizer textRecognizer = TextRecognizer();
 
   @override
   void dispose() {
-    textRecognizer.close(); // Close the recognizer when done
+    textRecognizer.close();
     super.dispose();
   }
 
@@ -54,13 +55,13 @@ class _SignupScreenState extends State<SignupScreen> {
                 keyboardType: TextInputType.datetime,
               ),
               const SizedBox(height: 20),
-          
+
               // Profile picture selection button
               ElevatedButton(
                 onPressed: () => _pickImage(),
                 child: const Text('Take Profile Picture'),
               ),
-          
+
               // Display selected profile picture with delete option
               if (_image != null)
                 Row(
@@ -82,15 +83,15 @@ class _SignupScreenState extends State<SignupScreen> {
                     ),
                   ],
                 ),
-          
+
               SizedBox(height: 10),
-          
+
               // National ID scan button
               ElevatedButton(
                 onPressed: () => _scanNationalID(),
                 child: Text('Scan National ID'),
               ),
-          
+
               // Display selected National ID image with delete option
               if (_nationalIdImage != null)
                 Row(
@@ -114,18 +115,22 @@ class _SignupScreenState extends State<SignupScreen> {
                     ),
                   ],
                 ),
-          
+
               // Display extracted text
               if (extractedText.isNotEmpty)
                 Padding(
                   padding: const EdgeInsets.all(8.0),
                   child: Text('National ID: $extractedText'),
                 ),
-          
-              SizedBox(height: 20),
+
+              const SizedBox(height: 20),
               ElevatedButton(
-                onPressed: () => _signup(context),
-                child: Text('Sign Up'),
+                onPressed: _isLoading
+                    ? null
+                    : () => _signup(context), // Disable button during loading
+                child: _isLoading
+                    ? CircularProgressIndicator() // Show loader
+                    : const Text('Sign Up'),
               ),
             ],
           ),
@@ -135,19 +140,16 @@ class _SignupScreenState extends State<SignupScreen> {
   }
 
   Future<void> _pickImage() async {
-    // Use the image picker to capture an image
     _image = await _picker.pickImage(source: ImageSource.camera);
     if (_image != null) {
-      setState(() {}); // Update the UI to display the selected image
+      setState(() {});
     }
   }
 
   Future<void> _scanNationalID() async {
-    // Use the image picker to capture an image for National ID
     _nationalIdImage = await _picker.pickImage(source: ImageSource.camera);
     if (_nationalIdImage != null) {
-      setState(
-          () {}); // Update the UI to display the selected national ID image
+      setState(() {});
 
       // Perform text recognition on the captured image
       await _recognizeText();
@@ -159,21 +161,20 @@ class _SignupScreenState extends State<SignupScreen> {
     final recognizedText = await textRecognizer.processImage(inputImage);
 
     setState(() {
-      extractedText = recognizedText.text; // Store the full extracted text
+      extractedText = recognizedText.text;
     });
 
     // Regex to match exactly 14 consecutive digits
     String? idNumber = _extractSpecificText(recognizedText.text, r'\b\d{14}\b');
     if (idNumber != null) {
-      extractedText =
-          idNumber; // Update extractedText with the specific ID number found
+      extractedText = idNumber;
     }
   }
 
   String? _extractSpecificText(String text, String pattern) {
     final regex = RegExp(pattern);
     final match = regex.firstMatch(text);
-    return match?.group(0); // Return the matched text if found
+    return match?.group(0);
   }
 
   void _signup(BuildContext context) async {
@@ -187,10 +188,14 @@ class _SignupScreenState extends State<SignupScreen> {
         _image == null ||
         _nationalIdImage == null) {
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Please fill in all fields and take pictures')),
+        const SnackBar(
+            content: Text('Please fill in all fields and take pictures')),
       );
       return;
     }
+    setState(() {
+      _isLoading = true; // Show loading
+    });
 
     try {
       // Check if the user already exists in Firestore based on mobile number
@@ -202,12 +207,13 @@ class _SignupScreenState extends State<SignupScreen> {
       if (snapshot.docs.isNotEmpty) {
         // User already exists based on mobile number
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('User already exists! Please login instead.')),
+          const SnackBar(
+              content: Text('User already exists! Please login instead.')),
         );
-        // Navigate back to LoginScreen
         Navigator.pop(context);
       } else {
         // User does not exist, proceed to create a new account
+
         await FirebaseFirestore.instance.collection('formData').add({
           'fullName': name,
           'mobileNumber': mobile,
@@ -220,7 +226,7 @@ class _SignupScreenState extends State<SignupScreen> {
         });
 
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Account created successfully!')),
+          const SnackBar(content: Text('Account created successfully!')),
         );
 
         // Optionally navigate to LoginScreen or HomeScreen
@@ -230,6 +236,10 @@ class _SignupScreenState extends State<SignupScreen> {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(content: Text('Error: $e')),
       );
+    } finally {
+      setState(() {
+        _isLoading = false; // Hide loading
+      });
     }
   }
 }
