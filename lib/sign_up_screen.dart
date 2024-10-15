@@ -2,6 +2,7 @@ import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:google_mlkit_text_recognition/google_mlkit_text_recognition.dart';
 
 class SignupScreen extends StatefulWidget {
   @override
@@ -17,103 +18,117 @@ class _SignupScreenState extends State<SignupScreen> {
   XFile? _image; // For the profile picture
   XFile? _nationalIdImage; // For the national ID scan
   String extractedText = ''; // To store extracted text
+  final TextRecognizer textRecognizer = TextRecognizer();
+
+  @override
+  void dispose() {
+    textRecognizer.close(); // Close the recognizer when done
+    super.dispose();
+  }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: Text('Sign Up'),
+        title: const Text('Sign Up'),
       ),
       body: Padding(
-        padding: EdgeInsets.all(16.0),
-        child: Column(
-          children: [
-            TextField(
-              controller: nameController,
-              decoration: InputDecoration(labelText: 'Full Name'),
-            ),
-            TextField(
-              controller: mobileController,
-              decoration: InputDecoration(labelText: 'Mobile Number'),
-              keyboardType: TextInputType.phone,
-            ),
-            TextField(
-              controller: birthDateController,
-              decoration: InputDecoration(labelText: 'Birthdate (dd/mm/yyyy)'),
-              keyboardType: TextInputType.datetime,
-            ),
-            SizedBox(height: 20),
-
-            // Picture selection button
-            ElevatedButton(
-              onPressed: () => _pickImage(),
-              child: Text('Take Picture'),
-            ),
-
-            // Display selected picture with delete option
-            if (_image != null)
-              Row(
-                children: [
-                  Image.file(
-                    File(_image!.path),
-                    width: 100,
-                    height: 100,
-                    fit: BoxFit.cover,
-                  ),
-                  IconButton(
-                    icon: Icon(Icons.delete),
-                    onPressed: () {
-                      setState(() {
-                        _image = null; // Clear the selected image
-                      });
-                    },
-                  ),
-                ],
+        padding: const EdgeInsets.symmetric(horizontal: 20),
+        child: SingleChildScrollView(
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.center,
+            children: [
+              TextField(
+                controller: nameController,
+                decoration: const InputDecoration(labelText: 'Full Name'),
               ),
-
-            SizedBox(height: 10),
-
-            // National ID scan button
-            ElevatedButton(
-              onPressed: () => _scanNationalID(),
-              child: Text('Scan National ID'),
-            ),
-
-            // Display selected National ID image with delete option
-            if (_nationalIdImage != null)
-              Row(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                children: [
-                  Image.file(
-                    File(_nationalIdImage!.path),
-                    width: 100,
-                    height: 100,
-                    fit: BoxFit.cover,
-                  ),
-                  IconButton(
-                    icon: Icon(Icons.delete),
-                    onPressed: () {
-                      setState(() {
-                        _nationalIdImage = null; // Clear the selected national ID image
-                      });
-                    },
-                  ),
-                ],
+              TextField(
+                controller: mobileController,
+                decoration: const InputDecoration(labelText: 'Mobile Number'),
+                keyboardType: TextInputType.phone,
               ),
-
-            // Display extracted text
-            if (extractedText.isNotEmpty)
-              Padding(
-                padding: const EdgeInsets.all(8.0),
-                child: Text('Extracted Text: $extractedText'),
+              TextField(
+                controller: birthDateController,
+                decoration:
+                    const InputDecoration(labelText: 'Birthdate (dd/mm/yyyy)'),
+                keyboardType: TextInputType.datetime,
               ),
-
-            SizedBox(height: 20),
-            ElevatedButton(
-              onPressed: () => _signup(context),
-              child: Text('Sign Up'),
-            ),
-          ],
+              const SizedBox(height: 20),
+          
+              // Profile picture selection button
+              ElevatedButton(
+                onPressed: () => _pickImage(),
+                child: const Text('Take Profile Picture'),
+              ),
+          
+              // Display selected profile picture with delete option
+              if (_image != null)
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    Image.file(
+                      File(_image!.path),
+                      width: 100,
+                      height: 100,
+                      fit: BoxFit.cover,
+                    ),
+                    IconButton(
+                      icon: Icon(Icons.delete),
+                      onPressed: () {
+                        setState(() {
+                          _image = null; // Clear the selected image
+                        });
+                      },
+                    ),
+                  ],
+                ),
+          
+              SizedBox(height: 10),
+          
+              // National ID scan button
+              ElevatedButton(
+                onPressed: () => _scanNationalID(),
+                child: Text('Scan National ID'),
+              ),
+          
+              // Display selected National ID image with delete option
+              if (_nationalIdImage != null)
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    Image.file(
+                      File(_nationalIdImage!.path),
+                      width: 100,
+                      height: 100,
+                      fit: BoxFit.cover,
+                    ),
+                    IconButton(
+                      icon: Icon(Icons.delete),
+                      onPressed: () {
+                        setState(() {
+                          _nationalIdImage =
+                              null; // Clear the selected national ID image
+                          extractedText = ''; // Clear extracted text
+                        });
+                      },
+                    ),
+                  ],
+                ),
+          
+              // Display extracted text
+              if (extractedText.isNotEmpty)
+                Padding(
+                  padding: const EdgeInsets.all(8.0),
+                  child: Text('National ID: $extractedText'),
+                ),
+          
+              SizedBox(height: 20),
+              ElevatedButton(
+                onPressed: () => _signup(context),
+                child: Text('Sign Up'),
+              ),
+            ],
+          ),
         ),
       ),
     );
@@ -131,16 +146,34 @@ class _SignupScreenState extends State<SignupScreen> {
     // Use the image picker to capture an image for National ID
     _nationalIdImage = await _picker.pickImage(source: ImageSource.camera);
     if (_nationalIdImage != null) {
-      setState(() {}); // Update the UI to display the selected national ID image
+      setState(
+          () {}); // Update the UI to display the selected national ID image
 
-      // Perform OCR on the captured image
-      //final text = await OCRScanText.scanTextFromFile(_nationalIdImage!.path);
-      // setState(() {
-      //   extractedText = text ?? 'No text found'; // Store extracted text
-      // });
-
-      // You can save the extracted text as needed (e.g., save to Firestore)
+      // Perform text recognition on the captured image
+      await _recognizeText();
     }
+  }
+
+  Future<void> _recognizeText() async {
+    final inputImage = InputImage.fromFilePath(_nationalIdImage!.path);
+    final recognizedText = await textRecognizer.processImage(inputImage);
+
+    setState(() {
+      extractedText = recognizedText.text; // Store the full extracted text
+    });
+
+    // Regex to match exactly 14 consecutive digits
+    String? idNumber = _extractSpecificText(recognizedText.text, r'\b\d{14}\b');
+    if (idNumber != null) {
+      extractedText =
+          idNumber; // Update extractedText with the specific ID number found
+    }
+  }
+
+  String? _extractSpecificText(String text, String pattern) {
+    final regex = RegExp(pattern);
+    final match = regex.firstMatch(text);
+    return match?.group(0); // Return the matched text if found
   }
 
   void _signup(BuildContext context) async {
@@ -180,8 +213,10 @@ class _SignupScreenState extends State<SignupScreen> {
           'mobileNumber': mobile,
           'birthDate': birthDate,
           'image': _image!.path, // Store the path of the captured image
-          'nationalIdImage': _nationalIdImage!.path, // Store the path of the scanned national ID
-          'extractedText': extractedText, // Store the extracted text from the ID
+          'nationalIdImage': _nationalIdImage!
+              .path, // Store the path of the scanned national ID
+          'nationalId':
+              extractedText, // Store the extracted text from the ID under 'nationalId'
         });
 
         ScaffoldMessenger.of(context).showSnackBar(

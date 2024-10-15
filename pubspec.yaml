@@ -42,8 +42,9 @@ dependencies:
   flutter_bloc: 
   firebase_auth: ^5.3.1 
   camera: 
-
-
+  google_mlkit_image_labeling: 
+  google_mlkit_text_recognition:
+  
 dev_dependencies:
   flutter_test:
     sdk: flutter

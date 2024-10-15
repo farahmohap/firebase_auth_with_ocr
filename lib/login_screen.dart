@@ -11,36 +11,41 @@ class LoginScreen extends StatelessWidget {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: Text('Login'),
+        title: const Text('Login'),
       ),
       body: Padding(
-        padding: EdgeInsets.all(16.0),
+        padding: const EdgeInsets.symmetric(horizontal: 20),
         child: Column(
           children: [
             TextField(
               controller: nameController,
-              decoration: InputDecoration(labelText: 'Name'),
+              decoration: const InputDecoration(labelText: 'Name'),
             ),
             TextField(
               controller: mobileController,
-              decoration: InputDecoration(labelText: 'Mobile Number'),
+              decoration: const InputDecoration(labelText: 'Mobile Number'),
               keyboardType: TextInputType.phone,
             ),
-            SizedBox(height: 20),
-            ElevatedButton(
-              onPressed: () => _login(context),
-              child: Text('Login'),
-            ),
-            TextButton(
-              onPressed: () {
-                Navigator.push(
-                  context,
-                  MaterialPageRoute(
-                    builder: (context) => SignupScreen(),
-                  ),
-                );
-              },
-              child: Text('Sign up'),
+            const SizedBox(height: 20),
+            Row(
+              mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+              children: [
+                ElevatedButton(
+                  onPressed: () => _login(context),
+                  child: const Text('Login'),
+                ),
+                ElevatedButton(
+                  onPressed: () {
+                    Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                        builder: (context) => SignupScreen(),
+                      ),
+                    );
+                  },
+                  child: const Text('Sign up'),
+                ),
+              ],
             ),
           ],
         ),
@@ -54,7 +59,7 @@ class LoginScreen extends StatelessWidget {
 
     if (name.isEmpty || mobile.isEmpty) {
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Please fill in all fields')),
+        const SnackBar(content: Text('Please fill in all fields')),
       );
       return;
     }
@@ -70,9 +75,11 @@ class LoginScreen extends StatelessWidget {
       if (snapshot.docs.isNotEmpty) {
         // User exists, retrieve user data
         final userData = snapshot.docs.first.data();
-        final birthDate = userData['birthDate'] ?? ''; // Default to empty if not found
+        final birthDate =
+            userData['birthDate'] ?? ''; // Default to empty if not found
         final image = userData['image'] ?? ''; // Default to empty if not found
-        final nationalIdImage = userData['nationalIdImage'] ?? ''; // Default to empty if not found
+        final nationalIdImage =
+            userData['nationalIdImage'] ?? ''; // Default to empty if not found
 
         // Navigate to HomeScreen with user data
         Navigator.pushReplacement(
@@ -82,15 +89,15 @@ class LoginScreen extends StatelessWidget {
               fullName: name,
               mobileNumber: mobile,
               birthDate: birthDate,
-              image: image,
-              nationalIdImage: nationalIdImage,
+              // image: image,
+              // nationalIdImage: nationalIdImage,
             ),
           ),
         );
       } else {
         // User not found, show error
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('User not found, please sign up!')),
+          const SnackBar(content: Text('User not found, please sign up!')),
         );
       }
     } catch (e) {
@@ -100,6 +107,7 @@ class LoginScreen extends StatelessWidget {
     }
   }
 }
+
 /*
   // void _checkUserAndNavigate(BuildContext context) async {
   //   final name = nameController.text;

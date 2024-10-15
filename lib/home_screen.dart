@@ -6,16 +6,16 @@ class HomeScreen extends StatelessWidget {
   final String fullName;
   final String mobileNumber;
   final String birthDate;
-  final String image;
-  final String nationalIdImage;
+  // final String image;
+  // final String nationalIdImage;
 
   const HomeScreen({
     Key? key,
     required this.fullName,
     required this.mobileNumber,
     required this.birthDate,
-    required this.image,
-    required this.nationalIdImage,
+    // required this.image,
+    // required this.nationalIdImage,
   }) : super(key: key);
 
   @override
@@ -29,14 +29,11 @@ class HomeScreen extends StatelessWidget {
         child: Column(
           children: [
             Text('Full Name: $fullName'),
+            const SizedBox(height: 20),
             Text('Mobile Number: $mobileNumber'),
+            const SizedBox(height: 20),
             Text('Birth Date: $birthDate'),
-            SizedBox(height: 20),
-            Text('Profile Picture:'),
-            Image.file(File(image), width: 100, height: 100),
-            SizedBox(height: 20),
-            Text('National ID Image:'),
-            Image.file(File(nationalIdImage), width: 100, height: 100),
+            const SizedBox(height: 20),
           ],
         ),
       ),
